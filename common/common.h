@@ -32,10 +32,3 @@ constexpr int digitToInt(const char c)
 
 	return static_cast<int>(c) - static_cast<int>('0');
 }
-
-class Solution
-{
-public:
-	virtual int64_t prob1(std::string file) = 0;
-	virtual int64_t prob2(std::string file) = 0;
-};

@@ -1,10 +1,23 @@
 #include <iostream>
 #include <common/common.h>
-#include "day1.h"
 
 
+std::pair<std::vector<int64_t>, std::vector<int64_t>> parseInput(const std::vector<std::string>& inp)
+{
+    std::vector<int64_t> l1(inp.size());
+    std::vector<int64_t> l2(inp.size());
+    int64_t i = 0;
+    for (const auto& nums : std::ranges::transform_view(inp, [](const auto& l) {return readNumsl(l); }))
+    {
+        l1[i] = nums[0];
+        l2[i] = nums[1];
+        ++i;
+    }
 
-int64_t SolutionDay1::prob1(std::string inputFile)
+    return std::make_pair(l1, l2);
+}
+
+int64_t prob1(std::string inputFile)
 {
     std::ifstream file(inputFile);
     auto content = readFile(file);
@@ -24,7 +37,7 @@ int64_t SolutionDay1::prob1(std::string inputFile)
 }
 
 
-int64_t SolutionDay1::prob2(std::string inputFile)
+int64_t prob2(std::string inputFile)
 {
     std::ifstream file(inputFile);
     auto content = readFile(file);
@@ -40,31 +53,16 @@ int64_t SolutionDay1::prob2(std::string inputFile)
     return n;
 }
 
-std::pair<std::vector<int64_t>, std::vector<int64_t>> SolutionDay1::parseInput(const std::vector<std::string>& inp)
-{
-    std::vector<int64_t> l1(inp.size());
-    std::vector<int64_t> l2(inp.size());
-    int64_t i = 0;
-    for (const auto& nums : std::ranges::transform_view(inp, [](const auto& l) {return readNumsl(l);}) )
-    {
-        l1[i] = nums[0];
-        l2[i] = nums[1];
-        ++i;
-    }
 
-    return std::make_pair(l1, l2);
-}
 
 int main()
 {
     std::string test = "test.txt";
     std::string input = "input.txt";
 
-    std::unique_ptr<Solution> sol = std::make_unique<SolutionDay1>();
+    std::cout << "Test P1:" << std::endl << prob1(test) << std::endl;
+    std::cout << "Input P1:" << std::endl << prob1(input) << std::endl << std::endl;
 
-    std::cout << "Test P1:" << std::endl << sol->prob1(test) << std::endl;
-    std::cout << "Input P1:" << std::endl << sol->prob1(input) << std::endl << std::endl;
-
-    std::cout << "Test P2:" << std::endl << sol->prob2(test) << std::endl;
-    std::cout << "Input P2:" << std::endl << sol->prob2(input) << std::endl;
+    std::cout << "Test P2:" << std::endl << prob2(test) << std::endl;
+    std::cout << "Input P2:" << std::endl << prob2(input) << std::endl;
 }

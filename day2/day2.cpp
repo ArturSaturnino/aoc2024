@@ -1,10 +1,8 @@
 #include <iostream>
 #include <common/common.h>
-#include "day2.h"
 
 
-
-int64_t SolutionDay2::prob1(std::string inputFile)
+int64_t prob1(std::string inputFile)
 {
     std::ifstream file(inputFile);
     auto content = readFile(file);
@@ -37,7 +35,7 @@ int64_t SolutionDay2::prob1(std::string inputFile)
 }
 
 
-int64_t SolutionDay2::prob2(std::string inputFile)
+int64_t prob2(std::string inputFile)
 {
     std::ifstream file(inputFile);
     auto content = readFile(file);
@@ -90,11 +88,9 @@ int main()
     std::string test = "test.txt";
     std::string input = "input.txt";
 
-    std::unique_ptr<Solution> sol = std::make_unique<SolutionDay2>();
+    std::cout << "Test P1:" << std::endl << prob1(test) << std::endl;
+    std::cout << "Input P1:" << std::endl << prob1(input) << std::endl << std::endl;
 
-    std::cout << "Test P1:" << std::endl << sol->prob1(test) << std::endl;
-    std::cout << "Input P1:" << std::endl << sol->prob1(input) << std::endl << std::endl;
-
-    std::cout << "Test P2:" << std::endl << sol->prob2(test) << std::endl;
-    std::cout << "Input P2:" << std::endl << sol->prob2(input) << std::endl;
+    std::cout << "Test P2:" << std::endl << prob2(test) << std::endl;
+    std::cout << "Input P2:" << std::endl << prob2(input) << std::endl;
 }
