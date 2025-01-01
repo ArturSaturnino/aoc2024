@@ -1,5 +1,6 @@
 #include <iostream>
 #include <common/common.h>
+#include <common/grid.h>
 
 
 
@@ -8,7 +9,7 @@ int64_t prob1(std::string inputFile)
     std::ifstream file(inputFile);
     auto content = readFile(file);
 
-    auto puzzle = Grid<const char>(content | std::views::transform([](const auto& str) {return std::span(str); }) | std::ranges::to<std::vector>() );
+    auto puzzle = Grid<char>( content | std::views::transform([](auto& str) {return std::span(str); }));
 
     std::string targetStr = "XMAS";
     int64_t count = 0;
@@ -50,7 +51,7 @@ int64_t prob2(std::string inputFile)
     std::ifstream file(inputFile);
     auto content = readFile(file);
 
-    auto puzzle = Grid<const char>(content | std::views::transform([](const auto& str) {return std::span(str); }) | std::ranges::to<std::vector>());
+    auto puzzle = Grid<char>(content | std::views::transform([](auto& str) {return std::span(str); }));
 
     int64_t count = 0;
 
