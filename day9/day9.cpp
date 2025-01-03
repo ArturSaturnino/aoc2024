@@ -10,6 +10,11 @@ public:
         uint64_t id;
         uint64_t startPos;
         uint64_t endPos;
+
+        bool operator< (const file& other) const
+        {
+            return startPos < other.startPos;
+        }
     };
 
     FileSystem(const std::string_view compressedSystem)
@@ -20,46 +25,64 @@ public:
             uint64_t endPos = currPos + std::stol(std::string({ compressedSystem[i] }));
             if (i % 2 == 0)
             {
-                m_fileList.emplace_back(
+                m_fileSet.insert(file(
                     i / 2,
                     currPos,
                     endPos
-                );
+                ));
+            }
+            else if(currPos < endPos)
+            {
+                m_freeSpace[currPos] = endPos;
             }
             currPos = endPos;
         }
+        m_freeSpace[currPos] = std::numeric_limits<uint64_t>::max();
+
     }
 
     void compress()
     {
-        auto itrTo = m_fileList.begin();
-        auto itrFrom = --m_fileList.end();
+        auto itrTo = m_freeSpace.begin();
+        auto itrFrom = --m_fileSet.end();
 
-        while (itrTo->startPos < itrFrom->startPos)
+        while (itrTo->first < itrFrom->startPos)
         {
-            while (itrTo->startPos <= itrFrom->startPos && itrTo->startPos - getLastEnd(itrTo) == 0)
-            {
-                ++itrTo;
-            }
-            realocFile(itrFrom, itrTo);
+            realocFile(*itrFrom, itrTo);
 
-            if (itrFrom == itrTo && itrFrom->endPos == itrFrom->startPos)
-            {
-                m_fileList.pop_back();
-                break;
-            }
-            else if (itrFrom->endPos == itrFrom->startPos)
-            {
-                m_fileList.pop_back();
-                itrFrom = --m_fileList.end();
-            }
+            itrTo = m_freeSpace.begin();
+            itrFrom = --m_fileSet.end();
         }
     }
+
+    void compressWholeFile()
+    {
+
+        const auto fileSetBefore = m_fileSet;
+        for (auto itrFrom = fileSetBefore.rbegin(); itrFrom != fileSetBefore.rend(); ++ itrFrom)
+        {
+
+            auto itrTo = m_freeSpace.begin();
+            while (itrTo != m_freeSpace.end() 
+                && itrTo->first < itrFrom->startPos 
+                && (itrTo->second - itrTo->first < itrFrom->endPos - itrFrom->startPos)
+                )
+                ++itrTo;
+
+            if(itrTo != m_freeSpace.end()
+                && itrTo->first < itrFrom->startPos
+                && (itrTo->second - itrTo->first >= itrFrom->endPos - itrFrom->startPos)
+                )
+                realocFile(*itrFrom, itrTo);
+        }
+    }
+
+
 
     int64_t calcChecksum() const
     {
         uint64_t sum = 0;
-        for (const auto& file : m_fileList)
+        for (const auto& file : m_fileSet)
         {
             sum += file.id * (file.endPos + file.startPos - 1) * (file.endPos - file.startPos) / 2;
         }
@@ -69,11 +92,11 @@ public:
 
 private:
 
-    uint64_t getLastEnd(const std::list<file>::iterator& itr) const
+    uint64_t getLastEnd(const std::set<file>::iterator& itr) const
     {
         uint64_t lastFileEnd = 0;
 
-        if (itr != m_fileList.begin())
+        if (itr != m_fileSet.begin())
         {
             auto tempItr = itr;
             lastFileEnd = (--tempItr)->endPos;
@@ -82,21 +105,37 @@ private:
     }
 
 
-    void realocFile(const std::list<file>::iterator& itrFrom, const std::list<file>::iterator& itrTo)
+    uint64_t realocFile(file f, const  std::map<uint64_t, uint64_t>::iterator& itrTo)
     {
-        auto leftPos = getLastEnd(itrTo);
-        auto sizeToMove = std::min(itrTo->startPos - leftPos, itrFrom->endPos - itrFrom->startPos);
-        itrFrom->endPos -= sizeToMove;
-        m_fileList.insert(itrTo, {
-            itrFrom->id,
+        auto leftPos = itrTo->first;
+        auto rightPos = itrTo->second;
+
+        auto sizeToMove = std::min(rightPos - leftPos, f.endPos - f.startPos);
+
+        m_fileSet.insert(file(
+           f.id,
            leftPos,
            leftPos + sizeToMove
-            });
+            ));
+
+        m_fileSet.erase(f);
+        if (f.endPos - f.startPos > sizeToMove)
+            m_fileSet.insert(file(
+                f.id,
+                f.startPos,
+                f.endPos - sizeToMove
+            ));
+
+        m_freeSpace.erase(itrTo);
+
+        if(leftPos + sizeToMove != rightPos)
+            m_freeSpace[leftPos + sizeToMove] = rightPos;
+
+        return sizeToMove;
     }
 
-
-    std::list<file> m_fileList;
-
+    std::set<file> m_fileSet;
+    std::map<uint64_t, uint64_t> m_freeSpace;
 };
 
 
@@ -118,7 +157,10 @@ int64_t prob2(std::string inputFile)
 {
     std::ifstream file(inputFile);
     auto content = readFile(file);
-    return 0;
+    FileSystem fs(content[0]);
+    fs.compressWholeFile();
+
+    return fs.calcChecksum();
 }
 
 int main()

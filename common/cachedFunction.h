@@ -28,13 +28,13 @@ struct std::hash<std::tuple<Args...>>
 
 
 template<typename R, typename ...Args>
-class CashedFunction
+class CachedFunction
 {
 public:
 
     using key_type = std::tuple<std::decay_t<Args>...>;
 
-    CashedFunction(const std::function<R(Args...)>& f):
+    CachedFunction(const std::function<R(Args...)>& f):
         m_f{f}
     {
     }

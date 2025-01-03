@@ -29,6 +29,52 @@ static std::array<dir,8> dirs
 	dir::NW
 };
 
+static std::array<dir, 4> cardinal_dirs
+{
+	dir::E,
+	dir::W,
+	dir::N,
+	dir::S
+};
+
+
+constexpr void moveInDir(dir direction, int64_t& row, int64_t& col)
+{
+	switch (direction)
+	{
+	case dir::E:
+		++col;
+		break;
+	case dir::W:
+		--col;
+		break;
+	case dir::N:
+		++row;
+		break;
+	case dir::S:
+		--row;
+		break;
+	case dir::NE:
+		++row;
+		++col;
+		break;
+	case dir::SE:
+		++col;
+		--row;
+		break;
+	case dir::SW:
+		--row;
+		--col;
+		break;
+	case dir::NW:
+		++row;
+		--col;
+		break;
+	default:
+		break;
+	}
+}
+
 
 constexpr dir rotateRight(dir d)
 {
@@ -161,39 +207,7 @@ public:
 
 	GridLineWalker& operator++()
 	{
-		switch (m_dir)
-		{
-		case dir::E:
-			++m_col;
-			break;
-		case dir::W:
-			--m_col;
-			break;
-		case dir::N:
-			++m_row;
-			break;
-		case dir::S:
-			--m_row;
-			break;
-		case dir::NE:
-			++m_row;
-			++m_col;
-			break;
-		case dir::SE:
-			++m_col;
-			--m_row;
-			break;
-		case dir::SW:
-			--m_row;
-			--m_col;
-			break;
-		case dir::NW:
-			++m_row;
-			--m_col;
-			break;
-		default:
-			break;
-		}
+		moveInDir(m_dir, m_row, m_col);
 		return *this;
 	}
 
