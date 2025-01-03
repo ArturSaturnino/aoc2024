@@ -44,7 +44,7 @@ int64_t isValid(int64_t targetVal, const std::ranges::range auto& nums, bool all
             return out;
         };
 
-    contConfig = CashedFunction<int64_t, int64_t, int64_t>(contConfig);
+    contConfig = CashedFunction<bool, int64_t, int64_t>(contConfig);
     
     return contConfig(targetVal, nums.size());
 
