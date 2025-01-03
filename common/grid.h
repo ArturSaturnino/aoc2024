@@ -38,8 +38,9 @@ static std::array<dir, 4> cardinal_dirs
 };
 
 
-constexpr void moveInDir(dir direction, int64_t& row, int64_t& col)
+constexpr std::pair<int64_t, int64_t> moveInDir(dir direction, int64_t row, int64_t col)
 {
+
 	switch (direction)
 	{
 	case dir::E:
@@ -73,6 +74,8 @@ constexpr void moveInDir(dir direction, int64_t& row, int64_t& col)
 	default:
 		break;
 	}
+
+	return { row, col };
 }
 
 
@@ -207,7 +210,9 @@ public:
 
 	GridLineWalker& operator++()
 	{
-		moveInDir(m_dir, m_row, m_col);
+		const auto [row, col] = moveInDir(m_dir, m_row, m_col);
+		m_row = row;
+		m_col = col;
 		return *this;
 	}
 

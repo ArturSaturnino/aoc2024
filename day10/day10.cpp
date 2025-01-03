@@ -32,9 +32,7 @@ int64_t prob1(std::string inputFile)
 
             for (const auto& d : cardinal_dirs)
             {
-                int64_t mRow = row;
-                int64_t mCol = col;
-                moveInDir(d, mRow, mCol);
+                auto[mRow, mCol] = moveInDir(d, row, col);
                 if (map.inBounds(mRow, mCol) && map.get(mRow, mCol) == currElevation + 1)
                     reachable.merge(reachablePeaks(mRow, mCol));
             }
@@ -82,9 +80,7 @@ int64_t prob2(std::string inputFile)
 
             for (const auto& d : cardinal_dirs)
             {
-                int64_t mRow = row;
-                int64_t mCol = col;
-                moveInDir(d, mRow, mCol);
+                auto [mRow, mCol] = moveInDir(d, row, col);
                 if (map.inBounds(mRow, mCol) && map.get(mRow, mCol) == currElevation + 1)
                     sum += rating(mRow, mCol);
             }
