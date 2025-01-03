@@ -4,25 +4,25 @@
 #include <unordered_map>
 #include <utility>
 
-template<typename... Args>
-struct std::hash<std::tuple<Args...>>
+template<typename Tuple>
+struct TupleHash
 {
 
     template <std::size_t I>
-    std::size_t hashHelper(const std::tuple<Args...>& args) const noexcept
+    std::size_t hashHelper(const Tuple& args) const noexcept
     {
-        return std::hash<std::tuple_element_t<I, std::tuple<Args...>>>{}(std::get<I>(args)) ^ (hashHelper<I-1>(args) << 1);
+        return std::hash<std::tuple_element_t<I, Tuple>>{}(std::get<I>(args)) ^ (hashHelper<I-1>(args) << 1);
     }
 
     template <>
-    std::size_t hashHelper<0>(const std::tuple<Args...>& args) const noexcept
+    std::size_t hashHelper<0>(const Tuple& args) const noexcept
     {
-        return std::hash<std::tuple_element_t<0, std::tuple<Args...>>>{}(std::get<0>(args));
+        return std::hash<std::tuple_element_t<0, Tuple>>{}(std::get<0>(args));
     }
 
-    std::size_t operator()(const std::tuple<Args...>& args) const noexcept
+    std::size_t operator()(const Tuple& args) const noexcept
     {
-        return hashHelper<std::tuple_size_v<std::tuple<Args...>> -1> (args);
+        return hashHelper<std::tuple_size_v<Tuple> -1> (args);
     }
 };
 
@@ -51,7 +51,7 @@ public:
 
 private:
 
-    std::unordered_map<key_type, R> m_cache;
+    std::unordered_map<key_type, R, TupleHash<key_type>> m_cache;
     std::function<R(Args...)> m_f;
 
 };
