@@ -37,10 +37,8 @@ constexpr int digitToInt(const char c)
 
 constexpr uint32_t countDigits(std::integral auto num)
 {
-	if (num == 0)
-		return 1;
-	uint32_t count = 0;
-	while (num /= 10 > 0)
+	uint32_t count = 1;
+	while ((num /= 10) > 0)
 		++count;
 	return count;
 }
