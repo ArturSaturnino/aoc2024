@@ -112,6 +112,39 @@ constexpr dir rotateRight(dir d)
 	}
 }
 
+constexpr dir rotateLeft(dir d)
+{
+	switch (d)
+	{
+	case dir::E:
+		return dir::N;
+		break;
+	case dir::W:
+		return dir::S;
+		break;
+	case dir::N:
+		return dir::W;
+		break;
+	case dir::S:
+		return dir::E;
+		break;
+	case dir::NE:
+		return dir::SW;
+		break;
+	case dir::SE:
+		return dir::NE;
+		break;
+	case dir::SW:
+		return dir::SE;
+		break;
+	case dir::NW:
+		return dir::SW;
+		break;
+	default:
+		break;
+	}
+}
+
 template <typename G>
 class GridLine;
 
@@ -166,6 +199,12 @@ public:
 	{ 
 		return m_data[m_nRows - row - 1][col]; 
 	};
+
+	template <class Self>
+	constexpr auto&& get(this Self&& self, std::pair<int64_t, int64_t> p)
+	{
+		return std::forward<Self>(self)->get(p.first, p.second);
+	}
 	
 	GridLine<Grid<T>> getLine(int64_t row, int64_t col, dir d)
 	{
@@ -181,6 +220,12 @@ public:
 	{
 		return row >= 0 && row < m_nRows && col >= 0 && col < m_nCols;
 	}
+
+	bool inBounds(std::pair<int64_t, int64_t> p) const
+	{
+		return inBounds(p.first, p.second);
+	}
+
 
 	int64_t nRows() const { return m_nRows; }
 	int64_t nCols() const { return m_nCols; }
