@@ -10,6 +10,10 @@
 template<typename T>
 concept arithmetic = std::is_arithmetic_v<T>;
 
+
+template<typename Tuple>
+concept tupleLike = requires (Tuple&& t){ std::get<0>(t); };
+
 template<arithmetic T, size_t N>
 class vec
 {
@@ -18,7 +22,7 @@ public:
 
 	vec(const std::ranges::range auto& r)
 	{
-		std::copy_n(r, N, m_data);
+		std::copy_n(r.begin(), N, m_data.begin());
 	}
 
 	vec(const std::array<T, N>& data) :
@@ -26,7 +30,8 @@ public:
 	{
 	}
 
-	template<typename Tuple>
+
+	template<typename Tuple> requires tupleLike<Tuple>
 	vec(const Tuple& tuple)
 	{
 		static_assert(N == std::tuple_size_v<Tuple>);
@@ -111,7 +116,7 @@ public:
 		return *this;
 	}
 
-	bool operator==(const vec& other)
+	bool operator==(const vec& other) const
 	{
 		for (int i = 0; i < N; ++i)
 		{
@@ -120,6 +125,31 @@ public:
 		}
 		return true;
 	}
+
+	bool operator<(const vec& other) const
+	{
+		for (int i = 0; i < N; ++i)
+		{
+			if (m_data[i] < other.m_data[i])
+				return true;
+			if (m_data[i] > other.m_data[i])
+				return false;
+		}
+		return false;
+	}
+
+	bool operator>(const vec& other) const
+	{
+		for (int i = 0; i < N; ++i)
+		{
+			if (m_data[i] < other.m_data[i])
+				return false;
+			if (m_data[i] > other.m_data[i])
+				return true;
+		}
+		return false;
+	}
+
 
 private:
 
