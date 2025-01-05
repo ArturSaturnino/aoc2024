@@ -56,7 +56,7 @@ public:
 	template <class Self>
 	constexpr auto&& get(this Self&& self, std::pair<int64_t, int64_t> p)
 	{
-		return std::forward<Self>(self)->get(p.first, p.second);
+		return std::forward<Self>(self).get(p.first, p.second);
 	}
 	
 	GridLine<Grid<T>> getLine(int64_t row, int64_t col, dir d)
