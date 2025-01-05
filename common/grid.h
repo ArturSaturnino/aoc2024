@@ -270,88 +270,119 @@ private:
 	int64_t m_nCols;
 };
 
-class GridLineWalker
+
+template <typename T>
+class GridWalkerBase;
+
+template <typename T>
+bool operator==(const GridWalkerBase<T>& lhs, const GridWalkerBase<T>& rhs);
+
+
+template<typename T>
+class GridWalkerBase
 {
 public:
-	
-	GridLineWalker(int64_t row, int64_t col, dir direction) :
+
+	int64_t getRow() const { return m_row; }
+	int64_t getCol() const { return m_col; }
+
+	T operator++(int)
+	{
+		T obj = static_cast<T&>(*this);
+		static_cast<T*>(this)->operator++();
+		return obj;
+	}
+
+	T operator--(int)
+	{
+		T obj = static_cast<T&>(*this);
+		static_cast<T*>(this)->operator--();
+		return obj;
+	}
+
+	friend bool operator==<T>(const GridWalkerBase& lhs, const GridWalkerBase& rhs);
+
+protected:
+
+	GridWalkerBase(int64_t row, int64_t col) :
 		m_row{ row },
-		m_col{col},
+		m_col{ col }
+	{
+	};
+
+	GridWalkerBase():
+		m_row{  },
+		m_col{  }
+	{
+	};
+
+	int64_t m_row;
+	int64_t m_col;
+
+};
+
+
+template<typename T>
+bool operator==(const GridWalkerBase<T>& lhs, const GridWalkerBase<T>& rhs)
+{
+	return lhs.m_row == rhs.m_row && lhs.m_col == rhs.m_col;
+}
+
+class GridLineWalker : public GridWalkerBase<GridLineWalker>
+{
+public:
+
+	GridLineWalker(int64_t row, int64_t col, dir direction) :
+		GridWalkerBase<GridLineWalker>{ row, col },
 		m_dir{direction}
 	{ }
 
 	GridLineWalker() :
-		m_row{  },
-		m_col{  },
+		GridWalkerBase<GridLineWalker>{ },
 		m_dir{  }
 	{
 	}
 
 	GridLineWalker& operator++()
 	{
-		const auto [row, col] = moveInDir(m_dir, m_row, m_col);
-		m_row = row;
-		m_col = col;
+		const auto [row, col] = moveInDir(m_dir, getRow(), getCol());
+		GridWalkerBase<GridLineWalker>::m_row = row;
+		GridWalkerBase<GridLineWalker>::m_col = col;
 		return *this;
-	}
-
-	GridLineWalker operator++(int)
-	{
-		auto itr = *this;
-		this->operator++();
-		return itr;
 	}
 
 	GridLineWalker& operator--()
 	{
 		const auto [row, col] = moveInDir(reverse(m_dir), m_row, m_col);
-		m_row = row;
-		m_col = col;
+		GridWalkerBase<GridLineWalker>::m_row = row;
+		GridWalkerBase<GridLineWalker>::m_col = col;
 		return *this;
 	}
-
-	GridLineWalker operator--(int)
-	{
-		auto itr = *this;
-		this->operator--();
-		return itr;
-	}
-
-	bool operator==(const GridLineWalker& rhs) const
-	{
-		return m_row == rhs.m_row && m_col == rhs.m_col;
-	}
-
-	int64_t getRow() const { return m_row; }
-	int64_t getCol() const { return m_col; }
-
 private:
-	int64_t m_row;
-	int64_t m_col;
 	dir m_dir;
 };
 
-template <typename I>
-class GridLineItrBase;
+template <typename I, typename Walker>
+class GridItrBase;
 
-template <typename I>
-bool operator==(const GridLineItrBase<I>& lhs, const GridLineItrBase<I>& rhs);
+template <typename I, typename Walker>
+bool operator==(const GridItrBase<I, Walker>& lhs, const GridItrBase<I, Walker>& rhs);
 
-template <typename I>
-class GridLineItrBase
+template <typename I, typename Walker>
+class GridItrBase
 {
 public:
 
 	using reference = std::iterator_traits<I>::reference;
 	using underlVectorPtr = std::iterator_traits<I>::pointer;
 
-	class GridLineItrBase(int64_t row, int64_t col, dir direction, underlVectorPtr ptr):
-		m_walker{ row, col, direction },
+	class GridItrBase(Walker walker, underlVectorPtr ptr):
+		m_walker{ walker },
 		m_gridItr{ ptr }
 	{
 	}
 
-	class GridLineItrBase() :
+	class GridItrBase() :
 		m_walker {},
 		m_gridItr{ }
 	{
@@ -385,7 +416,7 @@ public:
 
 	reference operator*() const
 	{
-		return const_cast<reference>(GridLineItrBase::operator*());
+		return const_cast<reference>(GridItrBase::operator*());
 	}
 
 	reference operator*()
@@ -394,19 +425,19 @@ public:
 	}
 
 	
-	friend bool operator==<I> (const GridLineItrBase& lhs, const GridLineItrBase& rhs);
+	friend bool operator==<I> (const GridItrBase& lhs, const GridItrBase& rhs);
 
 
 	int64_t getRow() const { return m_walker.getRow(); }
 	int64_t getCol() const { return m_walker.getCol(); }
 
 protected:
-	GridLineWalker m_walker;
+	Walker m_walker;
 	underlVectorPtr m_gridItr;
 };
 
-template <typename I>
-bool operator==(const GridLineItrBase<I>& lhs, const GridLineItrBase<I>& rhs)
+template <typename I, typename Walker>
+bool operator==(const GridItrBase<I, Walker>& lhs, const GridItrBase<I, Walker>& rhs)
 {
 	return lhs.m_walker == rhs.m_walker;
 }
@@ -423,20 +454,18 @@ struct std::iterator_traits<typename GridLineItr<G>>
 };
 
 template <typename G>
-class GridLineItr : public GridLineItrBase<GridLineItr<G>>
+class GridLineItr : public GridItrBase<GridLineItr<G>, GridLineWalker>
 {
 public:
 	
 	using pointer = typename std::iterator_traits<GridLineItr>::pointer;
 
 	GridLineItr(int64_t row, int64_t col, dir direction, G& grid) :
-		GridLineItrBase<GridLineItr<G>>{ row, col, direction, static_cast<pointer>(&(*--grid.m_data.end()))}
+		GridItrBase<GridLineItr<G>, GridLineWalker>{ GridLineWalker{ row, col, direction }, static_cast<pointer>(&(*--grid.m_data.end())) }
 	{
 	}
-	
-
 	GridLineItr(void) :
-		GridLineItrBase<GridLineItr<G>>{}
+		GridItrBase<GridLineItr<G, GridLineWalker>>{}
 	{
 	}
 	
@@ -446,19 +475,21 @@ static_assert(std::bidirectional_iterator<GridLineItr<Grid<char>>>);
 static_assert(std::bidirectional_iterator<ConstGridLineItr<Grid<char>>>);
 
 
+
 template <typename G>
-class GridLineBase
+class GridLine
 {
-	
 public:
-	GridLineBase(int64_t startRow, int64_t startCol, dir direction, G& grid) :
+
+
+	GridLine(int64_t startRow, int64_t startCol, dir direction, G& grid) :
 		m_srow{ startRow },
 		m_scol{ startCol },
 		m_dir{ direction },
 		m_grid{ grid }
 	{
-	}
-protected:
+	};
+
 
 	std::pair<int64_t, int64_t> getEnd() const
 	{
@@ -506,34 +537,24 @@ protected:
 		return { endRow, endCol };
 	}
 
-	int64_t m_srow;
-	int64_t m_scol;
-	dir m_dir;
-	G& m_grid;
-};
-
-
-template <typename G>
-class GridLine : GridLineBase<G>
-{
-public:
-
-
-	GridLine(int64_t startRow, int64_t startCol, dir direction, G& grid) :
-		GridLineBase<G>{ startRow , startCol, direction, grid }
-	{
-	};
 
 	GridLineItr<G> begin()
 	{
-		return GridLineItr<G>(GridLineBase<G>::m_srow, GridLineBase<G>::m_scol, GridLineBase<G>::m_dir, GridLineBase<G>::m_grid);
+		return GridLineItr<G>(m_srow, m_scol, m_dir, m_grid);
 	}
 
 
 	GridLineItr<G> end()
 	{
-		auto [endRow, endCol] = GridLineBase<G>::getEnd();
-		return GridLineItr<G>(endRow, endCol, GridLineBase<G>::m_dir, GridLineBase<G>::m_grid);
+		auto [endRow, endCol] = getEnd();
+		return GridLineItr<G>(endRow, endCol, m_dir, m_grid);
 	}
+
+private:
+
+	int64_t m_srow;
+	int64_t m_scol;
+	dir m_dir;
+	G& m_grid;
 
 };
