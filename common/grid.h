@@ -36,6 +36,13 @@ public:
 		m_nCols = m_data.empty() ? 0 : m_data[0].size();
 	};
 
+	Grid(int64_t nRows, int64_t nCols) :
+		m_data (nRows, std::vector<T>(nCols)),
+		m_nRows{ nRows },
+		m_nCols{ nCols }
+	{
+	};
+
 	const_reference get (int64_t row, int64_t col) const
 	{ 
 		return m_data[m_nRows - row - 1][col]; 
