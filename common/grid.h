@@ -129,7 +129,7 @@ constexpr dir rotateLeft(dir d)
 		return dir::E;
 		break;
 	case dir::NE:
-		return dir::SW;
+		return dir::NW;
 		break;
 	case dir::SE:
 		return dir::NE;
@@ -145,16 +145,53 @@ constexpr dir rotateLeft(dir d)
 	}
 }
 
+constexpr dir reverse(dir d)
+{
+	switch (d)
+	{
+	case dir::E:
+		return dir::W;
+		break;
+	case dir::W:
+		return dir::E;
+		break;
+	case dir::N:
+		return dir::S;
+		break;
+	case dir::S:
+		return dir::N;
+		break;
+	case dir::NE:
+		return dir::SW;
+		break;
+	case dir::SE:
+		return dir::NW;
+		break;
+	case dir::SW:
+		return dir::NE;
+		break;
+	case dir::NW:
+		return dir::SE;
+		break;
+	default:
+		break;
+	}
+}
+
+
+
+
 template <typename G>
 class GridLine;
 
 template <typename G>
 class ConstGridLine;
 
+template <typename G>
+class GridLineItr;
+
 template <typename R, typename T>
 concept RangeOfRangesOf = 
-	std::ranges::sized_range<R>&&
-	std::ranges::sized_range<std::ranges::range_value_t<R>>&&
 	std::convertible_to<std::ranges::range_value_t<std::ranges::range_value_t<R>>, T>
 	;
 
@@ -178,16 +215,15 @@ public:
 	template<typename G>
 	friend class ConstGridLineItr;
 
-	Grid(const RangeOfRangesOf<T> auto& data) :
-		m_nRows(data.size()),
-		m_nCols(data.empty() ? 0 : data[0].size()),
-		m_data{}
+	Grid(const RangeOfRangesOf<T> auto& data)
 	{
 		for (const auto& d : data)
 		{
-			m_data.push_back(std::vector<T>(m_nCols));
-			std::copy(d.begin(), d.end(), m_data.back().begin());
+			m_data.push_back(std::vector<T>{});
+			std::copy(d.begin(), d.end(), std::back_inserter(m_data.back()));
 		}
+		m_nRows = m_data.size();
+		m_nCols = m_data.empty() ? 0 : m_data[0].size();
 	};
 
 	const_reference get (int64_t row, int64_t col) const
@@ -211,9 +247,9 @@ public:
 		return GridLine(row, col, d, *this);
 	}
 
-	ConstGridLine<const Grid<T>> getLine(int64_t row, int64_t col, dir d) const
+	GridLine<const Grid<T>> getLine(int64_t row, int64_t col, dir d) const
 	{
-		return ConstGridLine(row, col, d, *this);
+		return GridLine(row, col, d, *this);
 	}
 
 	bool inBounds(int64_t row, int64_t col) const 
@@ -268,6 +304,21 @@ public:
 		return itr;
 	}
 
+	GridLineWalker& operator--()
+	{
+		const auto [row, col] = moveInDir(reverse(m_dir), m_row, m_col);
+		m_row = row;
+		m_col = col;
+		return *this;
+	}
+
+	GridLineWalker operator--(int)
+	{
+		auto itr = *this;
+		this->operator--();
+		return itr;
+	}
+
 	bool operator==(const GridLineWalker& rhs) const
 	{
 		return m_row == rhs.m_row && m_col == rhs.m_col;
@@ -282,6 +333,11 @@ private:
 	dir m_dir;
 };
 
+template <typename I>
+class GridLineItrBase;
+
+template <typename I>
+bool operator==(const GridLineItrBase<I>& lhs, const GridLineItrBase<I>& rhs);
 
 template <typename I>
 class GridLineItrBase
@@ -311,8 +367,21 @@ public:
 
 	I operator++(int)
 	{
-		auto itr = *this;
+		const I itr = static_cast<I&>(*this);
 		this->operator++();
+		return itr;
+	}
+
+	I& operator--()
+	{
+		--m_walker;
+		return static_cast<I&>(*this);
+	}
+
+	I operator--(int)
+	{
+		const I itr = static_cast<I&>(*this);
+		this->operator--();
 		return itr;
 	}
 
@@ -326,10 +395,9 @@ public:
 		return (*(m_gridItr - m_walker.getRow()))[m_walker.getCol()];
 	}
 
-	bool operator==(const GridLineItrBase& lhs) const
-	{
-		return m_walker == lhs.m_walker;
-	}
+	
+	friend bool operator==<I> (const GridLineItrBase& lhs, const GridLineItrBase& rhs);
+
 
 	int64_t getRow() const { return m_walker.getRow(); }
 	int64_t getCol() const { return m_walker.getCol(); }
@@ -339,8 +407,12 @@ protected:
 	underlVectorPtr m_gridItr;
 };
 
-template <typename G>
-class GridLineItr;
+template <typename I>
+bool operator==(const GridLineItrBase<I>& lhs, const GridLineItrBase<I>& rhs)
+{
+	return lhs.m_walker == rhs.m_walker;
+}
+
 
 template<typename G>
 struct std::iterator_traits<typename GridLineItr<G>>
@@ -349,7 +421,7 @@ struct std::iterator_traits<typename GridLineItr<G>>
 	using pointer = typename G::pointer;
 	using reference = typename G::reference;
 	using difference_type = int64_t;
-	using iterator_category = std::forward_iterator_tag;
+	using iterator_category = std::bidirectional_iterator_tag;
 };
 
 template <typename G>
@@ -370,14 +442,9 @@ public:
 	{
 	}
 	
-	bool operator==(const GridLineItr& lhs) const
-	{
-		return static_cast<GridLineItrBase<GridLineItr<G>>>(*this) == static_cast<GridLineItrBase<GridLineItr<G>>>(lhs);
-	}
-
 };
 
-static_assert(std::forward_iterator<GridLineItr<Grid<char>>>);
+static_assert(std::bidirectional_iterator<GridLineItr<Grid<char>>>);
 
 
 template <typename G>
@@ -410,11 +477,6 @@ public:
 	ConstGridLineItr(void) :
 		GridLineItrBase<GridLineItr<G>>{}
 	{
-	}
-
-	bool operator==(const ConstGridLineItr& lhs) const
-	{
-		return static_cast<GridLineItrBase<ConstGridLineItr<G>>>(*this) == static_cast<GridLineItrBase<ConstGridLineItr<G>>>(lhs);
 	}
 
 };
