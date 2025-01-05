@@ -1,9 +1,10 @@
 #pragma once
 
-#include <array>
 #include <algorithm>
-#include <vector>
+#include <array>
 #include <iterator>
+#include <type_traits>
+#include <vector>
 
 enum class dir
 {
@@ -185,10 +186,10 @@ template <typename G>
 class GridLine;
 
 template <typename G>
-class ConstGridLine;
+class GridLineItr;
 
 template <typename G>
-class GridLineItr;
+using ConstGridLineItr = GridLineItr<const G>;
 
 template <typename R, typename T>
 concept RangeOfRangesOf = 
@@ -211,9 +212,6 @@ public:
 
 	template<typename G>
 	friend class GridLineItr;
-
-	template<typename G>
-	friend class ConstGridLineItr;
 
 	Grid(const RangeOfRangesOf<T> auto& data)
 	{
@@ -418,8 +416,8 @@ template<typename G>
 struct std::iterator_traits<typename GridLineItr<G>>
 {
 	using value_type = typename G::value_type;
-	using pointer = typename G::pointer;
-	using reference = typename G::reference;
+	using pointer = std::conditional<std::is_const<G>::value, typename G::const_pointer, typename G::pointer>::type;
+	using reference = std::conditional<std::is_const<G>::value, typename G::const_reference, typename G::reference>::type;
 	using difference_type = int64_t;
 	using iterator_category = std::bidirectional_iterator_tag;
 };
@@ -445,43 +443,8 @@ public:
 };
 
 static_assert(std::bidirectional_iterator<GridLineItr<Grid<char>>>);
+static_assert(std::bidirectional_iterator<ConstGridLineItr<Grid<char>>>);
 
-
-template <typename G>
-class ConstGridLineItr;
-
-template<typename G>
-struct std::iterator_traits<typename ConstGridLineItr<G>>
-{
-	using value_type = const typename G::value_type;
-	using pointer = typename G::const_pointer;
-	using reference = typename G::const_reference;
-	using difference_type = int64_t;
-	using iterator_category = std::forward_iterator_tag;
-};
-
-
-template <typename G>
-class ConstGridLineItr : public GridLineItrBase<ConstGridLineItr<G>>
-{
-public:
-
-	using pointer = typename std::iterator_traits<ConstGridLineItr>::pointer;
-
-	ConstGridLineItr(int64_t row, int64_t col, dir direction, G& grid) :
-		GridLineItrBase<ConstGridLineItr<G>>{ row, col, direction, static_cast<pointer>(&(*--grid.m_data.end())) }
-	{
-	}
-
-
-	ConstGridLineItr(void) :
-		GridLineItrBase<GridLineItr<G>>{}
-	{
-	}
-
-};
-
-static_assert(std::forward_iterator<ConstGridLineItr<const Grid<char>>>);
 
 template <typename G>
 class GridLineBase
@@ -574,30 +537,3 @@ public:
 	}
 
 };
-
-template <typename G>
-class ConstGridLine : GridLineBase<G>
-{
-public:
-
-	ConstGridLine(int64_t startRow, int64_t startCol, dir direction, G& grid) :
-		GridLineBase<G>{ startRow , startCol, direction, grid }
-	{
-	};
-
-
-	ConstGridLineItr<G> begin()
-	{
-		return ConstGridLineItr<G>(GridLineBase<G>::m_srow, GridLineBase<G>::m_scol, GridLineBase<G>::m_dir, GridLineBase<G>::m_grid);
-	}
-
-
-	ConstGridLineItr<G> end()
-	{
-		auto [endRow, endCol] = GridLineBase<G>::getEnd();
-		return ConstGridLineItr<G>(endRow, endCol, GridLineBase<G>::m_dir, GridLineBase<G>::m_grid);
-	}
-
-};
-
-
