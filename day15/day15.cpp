@@ -1,7 +1,5 @@
 #include <common/common.h>
 #include <common/grid.h>
-#include <common/binaryTree.h>
-
 
 enum class entityEnum
 {
@@ -177,28 +175,6 @@ private:
     Grid<entityEnum> m_state;
     std::pair<int64_t, int64_t> m_robotPos;
 };
-
-
-dir getDir(char c)
-{
-    switch (c)
-    {
-    case '^':
-        return dir::N;
-    case '>':
-        return dir::E;
-    case 'v':
-        return dir::S;
-    case '<':
-        return dir::W;
-    default:
-        break;
-    }
-
-    return dir::SW;
-}
-
-
 
 
 

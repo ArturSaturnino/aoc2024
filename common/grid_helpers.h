@@ -39,6 +39,25 @@ static std::array<dir, 4> cardinal_dirs
 };
 
 
+constexpr dir getDir(char c)
+{
+	switch (c)
+	{
+	case '^':
+		return dir::N;
+	case '>':
+		return dir::E;
+	case 'v':
+		return dir::S;
+	case '<':
+		return dir::W;
+	default:
+		break;
+	}
+
+	return dir::SW;
+}
+
 constexpr std::pair<int64_t, int64_t> moveInDir(dir direction, int64_t row, int64_t col)
 {
 
@@ -78,6 +97,13 @@ constexpr std::pair<int64_t, int64_t> moveInDir(dir direction, int64_t row, int6
 
 	return { row, col };
 }
+
+constexpr std::pair<int64_t, int64_t> moveInDir(dir direction, std::pair<int64_t, int64_t> pos)
+{
+
+	return moveInDir(direction, pos.first, pos.second);
+}
+
 
 
 constexpr dir rotateRight(dir d)
