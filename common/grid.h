@@ -36,21 +36,22 @@ public:
 		m_nCols = m_data.empty() ? 0 : m_data[0].size();
 	};
 
-	Grid(int64_t nRows, int64_t nCols) :
+	Grid(int64_t nRows, int64_t nCols, bool flipVertical = true) :
 		m_data (nRows, std::vector<T>(nCols)),
 		m_nRows{ nRows },
-		m_nCols{ nCols }
+		m_nCols{ nCols },
+		m_flipVertical { flipVertical }
 	{
 	};
 
 	const_reference get (int64_t row, int64_t col) const
 	{ 
-		return m_data[m_nRows - row - 1][col]; 
+		return m_flipVertical? m_data[m_nRows - row - 1][col] : m_data[row][col];
 	};
 
 	reference get(int64_t row, int64_t col) 
 	{ 
-		return m_data[m_nRows - row - 1][col]; 
+		return m_flipVertical ? m_data[m_nRows - row - 1][col] : m_data[row][col];
 	};
 
 	template <class Self>
@@ -108,6 +109,7 @@ private:
 	std::vector<std::vector<T>> m_data;
 	int64_t m_nRows;
 	int64_t m_nCols;
+	bool m_flipVertical;
 };
 
 template <typename T >
