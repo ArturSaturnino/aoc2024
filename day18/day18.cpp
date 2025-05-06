@@ -51,9 +51,6 @@ int64_t prob1(std::string inputFile)
     std::ifstream file(inputFile);
     auto content = readFile(file);
     auto memSpace = getMemSpace(content, 71, 1024);
-
-
-
     return getShortestPath(memSpace);
 }
 
@@ -62,6 +59,23 @@ int64_t prob2(std::string inputFile)
 {
     std::ifstream file(inputFile);
     auto content = readFile(file);
+
+    Grid<int> memSpace(71, 71, false);
+    
+    int count = 0;
+    for (const auto& p : content)
+    {
+        ++count;
+        auto pNums = readNums(p);
+        memSpace.get(pNums[1], pNums[0]) = 1;
+        if (getShortestPath(memSpace) == 0)
+        {
+            std::cout << p << "\n";
+            return count;
+        }
+            
+    }
+
     return 0;
 }
 
