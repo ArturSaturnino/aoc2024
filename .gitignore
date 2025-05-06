@@ -368,4 +368,4 @@ CMakeFiles/
 *.filters
 *.cmake
 CMakeCache.txt
-
+build/

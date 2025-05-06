@@ -23,7 +23,6 @@ private:
     int64_t regC;
     int64_t iPtr;
     std::vector<int64_t> out;
-
 public:
 
     enum class instructions
@@ -114,7 +113,18 @@ public:
             executeInstruction(getInstruction(program[iPtr]), program[iPtr + 1]);
         return out;
     }
-    
+
+    std::vector<int64_t> run(const std::vector<int64_t>& program, int nSteps)
+    {
+        int i = 0;
+        while (i < nSteps && iPtr < program.size() - 1)
+        {
+            executeInstruction(getInstruction(program[iPtr]), program[iPtr + 1]);
+            ++i;
+        }
+        return out;
+    }
+
     CPU(int64_t regA, int64_t regB, int64_t regC):
         regA {regA},
         regB {regB},
@@ -146,11 +156,41 @@ int64_t prob1(std::string inputFile)
 }
 
 
+int64_t getSubSolution(const std::vector<int64_t>& program, int pos, int64_t start)
+{
+    if (pos >= program.size())
+        return start;
+
+    int64_t input = start << 3;
+    int64_t target = program[program.size() - 1 - pos];
+    bool hasMatch = false;
+    for (int b = 0; b < 8; ++b)
+    {
+        CPU cpu(input + b, 0, 0);
+        auto out = cpu.run(program, program.size() / 2);
+        if (out[0] == target)
+        {
+            int64_t sol = getSubSolution(program, pos + 1, input + b);
+            if (sol >= 0)
+            {
+                return sol;
+            }
+        }
+    }
+    if (!hasMatch)
+        return -1;
+
+}
+
+
 int64_t prob2(std::string inputFile)
 {
     std::ifstream file(inputFile);
     auto content = readFile(file);
-    return 0;
+
+    auto program = readNumsl(content[4]);
+
+    return getSubSolution(program, 0, 0);
 }
 
 int main()
@@ -163,4 +203,5 @@ int main()
 
     std::cout << "Test P2:" << std::endl << prob2(test) << std::endl;
     std::cout << "Input P2:" << std::endl << prob2(input) << std::endl;
+
 }
