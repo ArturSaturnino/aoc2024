@@ -115,26 +115,21 @@ public:
 
                 explored.insert(pt_curr);
 
-                if (m_eDist.contains(pt_curr) && dist > 0)
+                if (m_eDist.contains(pt_curr))
                 {
                     shortcuts[{pt, pt_curr}] = baseDist - (sDis + dist + m_eDist.at(pt_curr));
-                    continue;
                 }
-                else
+                
+                for (const auto& d : cardinal_dirs)
                 {
-                    for (const auto& d : cardinal_dirs)
+                    auto pt_d = moveInDir(d, pt_curr);
+
+                    if (m_maze.inBounds(pt_d) && dist < cheatDuration)
                     {
-                        auto pt_d = moveInDir(d, pt_curr);
-
-                        if (m_maze.get(pt_curr) != '#' && m_maze.get(pt_d) != '#')
-                            continue;
-
-                        if (m_maze.inBounds(pt_d) && dist < cheatDuration)
-                        {
-                            queue.emplace(pt_d, dist + 1);
-                        }
+                        queue.emplace(pt_d, dist + 1);
                     }
                 }
+                
             }
         }
         return shortcuts;
