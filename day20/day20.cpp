@@ -61,30 +61,6 @@ public:
         m_eDist = getDistances(m_end);
     }
 
-    std::vector<std::tuple<std::pair<size_t, size_t>, std::pair<size_t, size_t>, int64_t>> getShortcuts() const
-    {
-        int64_t baseDist = m_sDist.at(m_end);
-        std::vector<std::tuple<std::pair<size_t, size_t>, std::pair<size_t, size_t>, int64_t>> shortcuts;
-
-        for (const auto& [pt, sDis] : m_sDist)
-        {
-            for (const auto& d1 : cardinal_dirs)
-            {
-                auto pt_st = moveInDir(d1, pt);
-                if (m_maze.inBounds(pt_st) && m_maze.get(pt_st) == '#')
-                {
-                    for (const auto& d2 : cardinal_dirs)
-                    {
-                        auto pt_end = moveInDir(d2, pt_st);
-                        if (m_eDist.contains(pt_end))
-                            shortcuts.emplace_back(pt_st, pt_end, baseDist - (sDis + 2 + m_eDist.at(pt_end)));
-                    }
-                }
-            }
-        }
-        return shortcuts;
-    }
-
     std::map<std::pair<std::pair<size_t, size_t>, std::pair<size_t, size_t>>, int64_t> getShortcuts(int cheatDuration) const
     {
         int64_t baseDist = m_sDist.at(m_end);
@@ -143,11 +119,11 @@ int64_t prob1(std::string inputFile)
     auto content = readFile(file);
 
     Maze maze(content);
-    auto shortcuts = maze.getShortcuts();
+    auto shortcuts = maze.getShortcuts(2);
 
     int64_t shortcutCounts = 0;
 
-    for (const auto [pt_st, pt_end, s] : shortcuts)
+    for (const auto [pts, s] : shortcuts)
     {
         if(s >= 100)
             ++shortcutCounts;
@@ -166,12 +142,9 @@ int64_t prob2(std::string inputFile)
     auto shortcuts = maze.getShortcuts(20);
 
     int64_t shortcutCounts = 0;
-    std::map<int64_t, int64_t> shortcutCountsMap{};
-
 
     for (const auto [pts, s] : shortcuts)
     {
-        ++shortcutCountsMap[s];
         if (s >= 100)
             ++shortcutCounts;
     }
