@@ -85,7 +85,60 @@ public:
         return shortcuts;
     }
 
+    std::map<std::pair<std::pair<size_t, size_t>, std::pair<size_t, size_t>>, int64_t> getShortcuts(int cheatDuration) const
+    {
+        int64_t baseDist = m_sDist.at(m_end);
+        std::map<std::pair<std::pair<size_t, size_t>, std::pair<size_t, size_t>>, int64_t> shortcuts;
 
+        for (const auto& [pt, sDis] : m_sDist)
+        {
+            using Entry = std::pair<std::pair<size_t, size_t>, int64_t>;
+
+            auto comp = [](const Entry& left, const Entry& right) -> bool
+                {
+                    return left.second > right.second;
+                };
+            std::priority_queue<Entry, std::vector<Entry>, decltype(comp)> queue;
+
+            std::vector<std::pair<size_t, size_t>> pt_ends;
+            std::set<std::pair<size_t, size_t>> explored;
+            queue.emplace(pt, 0);
+
+
+            while (queue.size() > 0)
+            {
+                auto [pt_curr, dist] = queue.top();
+                queue.pop();
+
+                if (explored.contains(pt_curr))
+                    continue;
+
+                explored.insert(pt_curr);
+
+                if (m_eDist.contains(pt_curr) && dist > 0)
+                {
+                    shortcuts[{pt, pt_curr}] = baseDist - (sDis + dist + m_eDist.at(pt_curr));
+                    continue;
+                }
+                else
+                {
+                    for (const auto& d : cardinal_dirs)
+                    {
+                        auto pt_d = moveInDir(d, pt_curr);
+
+                        if (m_maze.get(pt_curr) != '#' && m_maze.get(pt_d) != '#')
+                            continue;
+
+                        if (m_maze.inBounds(pt_d) && dist < cheatDuration)
+                        {
+                            queue.emplace(pt_d, dist + 1);
+                        }
+                    }
+                }
+            }
+        }
+        return shortcuts;
+    }
 };
 
 
@@ -113,7 +166,22 @@ int64_t prob2(std::string inputFile)
 {
     std::ifstream file(inputFile);
     auto content = readFile(file);
-    return 0;
+
+    Maze maze(content);
+    auto shortcuts = maze.getShortcuts(20);
+
+    int64_t shortcutCounts = 0;
+    std::map<int64_t, int64_t> shortcutCountsMap{};
+
+
+    for (const auto [pts, s] : shortcuts)
+    {
+        ++shortcutCountsMap[s];
+        if (s >= 100)
+            ++shortcutCounts;
+    }
+
+    return shortcutCounts;
 }
 
 int main()
