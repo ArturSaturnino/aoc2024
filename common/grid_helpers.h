@@ -8,6 +8,7 @@
 
 enum class dir
 {
+	INVALID,
 	E,
 	W,
 	N,
@@ -55,7 +56,26 @@ constexpr dir getDir(char c)
 		break;
 	}
 
-	return dir::SW;
+	return dir::INVALID;
+}
+
+constexpr char gerDirChar(dir d)
+{
+	switch (d)
+	{
+	case dir::N:
+		return '^';
+	case dir::E:
+		return '>';
+	case dir::S:
+		return 'v';
+	case dir::W:
+		return '<';
+	default:
+		break;
+	}
+
+	return '\0';
 }
 
 constexpr std::pair<int64_t, int64_t> moveInDir(dir direction, int64_t row, int64_t col)

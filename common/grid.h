@@ -25,7 +25,8 @@ public:
 	template<typename G, typename W>
 	friend class GridItr;
 
-	Grid(const RangeOfRangesOf<T> auto& data)
+	Grid(const RangeOfRangesOf<T> auto& data, bool flipVertical = true):
+		m_flipVertical{ flipVertical }
 	{
 		for (const auto& d : data)
 		{
@@ -34,6 +35,7 @@ public:
 		}
 		m_nRows = m_data.size();
 		m_nCols = m_data.empty() ? 0 : m_data[0].size();
+
 	};
 
 	Grid(int64_t nRows, int64_t nCols, bool flipVertical = true) :
