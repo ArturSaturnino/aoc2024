@@ -52,14 +52,17 @@ public:
         }
     }
 
-    int64_t calcOutput(const std::unordered_map<std::string_view, bool>& startValues) const
+    std::unordered_map<std::string, bool> calcWires(const std::unordered_map<std::string, bool>& startValues) const
     {
         std::unordered_map<int64_t, int64_t> dependenceMap;
         std::vector<const Gate*> computeQueue;
-        std::unordered_map<std::string_view, bool> wireValues{ startValues };
+        std::unordered_map<std::string, bool> wireValues{ startValues };
 
         for (const auto& [wire, val] : wireValues)
         {
+            if (!m_inConnections.contains(wire))
+                continue;
+
             for (const auto& gate : m_inConnections.at(wire))
             {
                 int n = ++dependenceMap[gate->id];
@@ -73,7 +76,7 @@ public:
             const Gate* gate = computeQueue.back();
             computeQueue.pop_back();
             wireValues[gate->out] = gate->eval(wireValues[gate->in1], wireValues[gate->in2]);
-            
+
             if (!m_inConnections.contains(gate->out))
                 continue;
 
@@ -84,10 +87,14 @@ public:
                     computeQueue.push_back(gateI);
             }
         }
+        return wireValues;
 
+    }
 
+    int64_t calcOutput(const std::unordered_map<std::string, bool>& startValues) const
+    {
         int64_t tot = 0;
-        for (const auto& [wire, val] : wireValues)
+        for (const auto& [wire, val] : calcWires(startValues))
         {
             if (wire[0] != 'z')
                 continue;
@@ -98,6 +105,8 @@ public:
         return tot;
 
     }
+
+
 };
 
 Gate readGate(std::string_view gateStr, int64_t id)
@@ -140,7 +149,7 @@ int64_t prob1(std::string inputFile)
     std::ifstream file(inputFile);
     auto content = readFile(file);
 
-    std::unordered_map<std::string_view, bool> startValues;
+    std::unordered_map<std::string, bool> startValues;
     std::vector<Gate> gates;
 
 
@@ -148,7 +157,7 @@ int64_t prob1(std::string inputFile)
 
     for (; it != content.end() && !it->empty(); ++it)
     {
-        startValues[std::string_view(it->c_str(), 3)] = (*it)[5] == '1';
+        startValues[std::string(it->c_str(), 3)] = (*it)[5] == '1';
     }
     ++it;
     int64_t id = 0;
@@ -167,6 +176,110 @@ int64_t prob2(std::string inputFile)
 {
     std::ifstream file(inputFile);
     auto content = readFile(file);
+
+    std::unordered_map<std::string_view, bool> startValues;
+    std::vector<Gate> gates;
+
+
+    auto it = content.begin();
+
+    for (; it != content.end() && !it->empty(); ++it)
+    {
+    }
+    ++it;
+    int64_t id = 0;
+    for (; it != content.end(); ++it, ++id)
+    {
+        gates.push_back(readGate(*it, id));
+    }
+
+    Circuit circuit(gates);
+
+
+
+    std::string carryWire = "prt";
+
+    std::array<std::tuple<bool, bool, bool>, 8> testCases =
+    {
+        std::tuple {false, false, false},
+        std::tuple {true, false, false},
+        std::tuple {false, true, false},
+        std::tuple {true, true, false},
+        std::tuple {false, false, true},
+        std::tuple {true, false, true},
+        std::tuple {false, true, true},
+        std::tuple {true, true, true},
+    };
+
+   for (int i = 1; i <= 44; ++i)
+   {
+       std::string numStr = std::format("{:02d}", i);
+
+       std::vector<std::set<std::string>> nextCarryCandidates;
+       std::vector<std::set<std::string>> outputCandidates;
+
+       for (const auto& [xT, yT, cT] : testCases)
+       {
+           std::unordered_map<std::string, bool> testVals{};
+           testVals["x" + numStr] = xT;
+           testVals["y" + numStr] = yT;
+           testVals[carryWire] = cT;
+
+           auto outWires = circuit.calcWires(testVals);
+
+           std::set<std::string> outCands;
+           std::set<std::string> nextCarryCands;
+           for (const auto& [wire, val] : outWires)
+           {
+               if (val == (xT ^ yT ^ cT))
+                   outCands.insert(wire);
+               if (val == (static_cast<int>(xT) + static_cast<int>(yT) + static_cast<int>(cT) >= 2))
+                   nextCarryCands.insert(wire);
+           }
+           outputCandidates.push_back(outCands);
+           nextCarryCandidates.push_back(nextCarryCands);
+       }
+
+       auto nextCarry = nextCarryCandidates[0];
+       for (const auto& set : nextCarryCandidates | std::views::drop(1))
+       {
+           std::set<std::string> nextCarryTemp{};
+           for (const auto& wire : nextCarry)
+           {
+               if (set.contains(wire))
+                   nextCarryTemp.insert(wire);
+           }
+           nextCarry = nextCarryTemp;
+       }
+
+       if (nextCarry.size() != 1)
+       {
+           std::cout << i << '\n';
+           return 0;
+       }
+
+       carryWire = *nextCarry.begin();
+
+       auto outWire = outputCandidates[0];
+       for (const auto& set : outputCandidates | std::views::drop(1))
+       {
+           std::set<std::string> outTemp{};
+           for (const auto& wire : outWire)
+           {
+               if (set.contains(wire))
+                   outTemp.insert(wire);
+           }
+           outWire = outTemp;
+       }
+
+       if (outWire.size() != 1)
+       {
+           std::cout << i << '\n';
+           return 0;
+       }
+
+   }
+
     return 0;
 }
 
@@ -178,6 +291,6 @@ int main()
     std::cout << "Test P1:" << std::endl << prob1(test) << std::endl;
     std::cout << "Input P1:" << std::endl << prob1(input) << std::endl << std::endl;
 
-    std::cout << "Test P2:" << std::endl << prob2(test) << std::endl;
-    std::cout << "Input P2:" << std::endl << prob2(input) << std::endl;
+    std::cout << "Test P2:" << std::endl << prob2("fixed.txt") << std::endl;
+    //std::cout << "Input P2:" << std::endl << prob2(input) << std::endl;
 }
